@@ -15,14 +15,16 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+                sh 'docker build --no-cache -t $IMAGE_NAME:$IMAGE_TAG .'
                 sh 'docker tag $IMAGE_NAME:$IMAGE_TAG $IMAGE_NAME:latest'
             }
         }
 
         stage('Load Image into Minikube') {
             steps {
-                sh 'minikube image load $IMAGE_NAME:latest --alsologtostderr --overwrite=true 2>&1 | tail -20'
+                sh 'docker save $IMAGE_NAME:latest -o /tmp/$IMAGE_NAME.tar'
+                sh 'docker cp /tmp/$IMAGE_NAME.tar minikube:/tmp/$IMAGE_NAME.tar'
+                sh 'docker exec minikube docker load -i /tmp/$IMAGE_NAME.tar'
             }
         }
 
