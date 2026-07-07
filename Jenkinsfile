@@ -22,9 +22,7 @@ pipeline {
 
         stage('Load Image into Minikube') {
             steps {
-                sh 'docker save $IMAGE_NAME:latest -o /tmp/$IMAGE_NAME.tar'
-                sh 'docker cp /tmp/$IMAGE_NAME.tar minikube:/tmp/$IMAGE_NAME.tar'
-                sh 'docker exec minikube docker load -i /tmp/$IMAGE_NAME.tar'
+                sh 'docker save $IMAGE_NAME:latest | docker exec -i minikube docker load'
             }
         }
 
