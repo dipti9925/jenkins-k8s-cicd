@@ -22,7 +22,7 @@ pipeline {
 
         stage('Load Image into Minikube') {
             steps {
-                sh 'minikube image load $IMAGE_NAME:latest'
+                sh 'minikube image load $IMAGE_NAME:latest --alsologtostderr --overwrite=true 2>&1 | tail -20'
             }
         }
 
