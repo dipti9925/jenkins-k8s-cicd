@@ -22,7 +22,9 @@ pipeline {
 
         stage('Load Image into Minikube') {
             steps {
-                sh 'minikube image load $IMAGE_NAME:latest'
+                sh 'docker save $IMAGE_NAME:latest -o /tmp/$IMAGE_NAME.tar'
+                sh 'docker cp /tmp/$IMAGE_NAME.tar minikube:/tmp/$IMAGE_NAME.tar'
+                sh 'docker exec minikube ctr -n=k8s.io images import /tmp/$IMAGE_NAME.tar'
             }
         }
 
@@ -30,7 +32,7 @@ pipeline {
             steps {
                 sh 'kubectl apply -f k8s/deployment.yaml'
                 sh 'kubectl apply -f k8s/service.yaml'
-                sh 'kubectl set image deployment/cicd-demo-app cicd-demo-app=$IMAGE_NAME:latest'
+                sh 'kubectl rollout restart deployment/cicd-demo-app'
                 sh 'kubectl rollout status deployment/cicd-demo-app'
             }
         }
@@ -45,4 +47,3 @@ pipeline {
         }
     }
 }
-
