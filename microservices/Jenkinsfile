@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build Images') {
+            steps {
+                sh 'docker build -t users-service:v${BUILD_NUMBER} ./microservices/users-service'
+                sh 'docker tag users-service:v${BUILD_NUMBER} users-service:v1'
+
+                sh 'docker build -t orders-service:v${BUILD_NUMBER} ./microservices/orders-service'
+                sh 'docker tag orders-service:v${BUILD_NUMBER} orders-service:v1'
+            }
+        }
+
+        stage('Load Images into Minikube') {
+            steps {
+                sh 'docker save users-service:v1 | docker exec -i minikube docker load'
+                sh 'docker save orders-service:v1 | docker exec -i minikube docker load'
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh 'kubectl apply -f microservices/k8s/users-service.yaml'
+                sh 'kubectl apply -f microservices/k8s/orders-service.yaml'
+                sh 'kubectl rollout restart deployment/users-service'
+                sh 'kubectl rollout restart deployment/orders-service'
+                sh 'kubectl rollout status deployment/users-service'
+                sh 'kubectl rollout status deployment/orders-service'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Microservices deployed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed.'
+        }
+    }
+}
